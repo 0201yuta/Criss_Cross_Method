@@ -12,12 +12,12 @@ def Pivot(tableau, b, n):
     tableau[b + 1] = v2
     return tableau
 
-def CCMethod(tableau): #algorithm1を実装したCrissCrossMethod
+def CCMethod(tableau, error): #algorithm1を実装したCrissCrossMethod
     row, col = tableau.shape
     row = row - 1
     col = col - 1
-    I = np.where(tableau[1:, 0] < 0)[0] + col
-    J = np.where(tableau[0, 1:] < 0)[0]
+    I = np.where(tableau[1:, 0] < - np.power(10., -error))[0] + col
+    J = np.where(tableau[0, 1:] < - np.power(10., -error))[0]
     Index = np.array(list(range(0, row + col)))
     Index = np.hstack([Index[-row:],Index[:-row]])
     count = 0
@@ -34,7 +34,7 @@ def CCMethod(tableau): #algorithm1を実装したCrissCrossMethod
             k_J = row + col        
         if k_I < k_J: #step3を実行
             k = np.where(Index == k_I)[0][0] - col #k_Iが何行目に格納されているかを表す式
-            S = np.where(tableau[k + 1, 1:] < 0)[0] 
+            S = np.where(tableau[k + 1, 1:] < - np.power(10., -error))[0] 
             if S.size != 0:
                 j = np.where(Index == np.amin(np.array([Index[x] for x in S])))[0][0]
                 tableau = Pivot(tableau, k, j)
@@ -43,7 +43,7 @@ def CCMethod(tableau): #algorithm1を実装したCrissCrossMethod
                 return "no feasible solution",count    
         else: #step4を実行 
             k = np.where(Index == k_J)[0][0]
-            T = np.where(tableau[1:, k + 1] > 0)[0] + col
+            T = np.where(tableau[1:, k + 1] > np.power(10., -error))[0] + col
             if T.size != 0:
                 i = np.where(Index == np.amin(np.array([Index[x] for x in T])))[0][0]
                 tableau = Pivot(tableau, i - col, k)
