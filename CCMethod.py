@@ -261,8 +261,9 @@ def solve_imp(path, error, rule, balance):
 
 def test_CC(root, error):   
     result_table = []
-    files = os.listdir(root)
-    dirlist = [dir for dir in files if os.path.isdir(os.path.join(root, dir))]
+    #files = os.listdir(root)
+    #dirlist = [dir for dir in files if os.path.isdir(os.path.join(root, dir))]
+    dirlist = ['afiro', 'blend', 'sc50a', 'sc50b', 'scagr7', 'seba', 'stocfor1']
     for name in dirlist:
         P = r'\a\a'
         path = root + P.replace('a', name)
@@ -271,18 +272,17 @@ def test_CC(root, error):
         result_table.append(result)
     return result_table   
 
-def makedata(root):   
-    error_table = []
-    files = os.listdir(root)
-    dirlist = [dir for dir in files if os.path.isdir(os.path.join(root, dir))]
+def test_imp(root, error, rule, balance):   
+    result_table = []
+    dirlist = ['afiro', 'blend', 'sc50a', 'sc50b', 'scagr7', 'seba', 'stocfor1']
     for name in dirlist:
         P = r'\a\a'
         path = root + P.replace('a', name)
-        opt = np.loadtxt(path + r'_opt.txt', delimiter = ',')[0]
-        T = [name, opt]
-        error_table.append(T)
-    return error_table       
-
+        result = [name]
+        result.extend(solve_imp(path, error, rule, balance))
+        result_table.append(result)
+    return result_table 
+    
 
 #sample = np.array([[191.5, 5.5, -0.5, 4.5, 0], [-5.75, -0.25, 0.25, -0.25, 0], [40.75, 1.25, -0.25, 1.25, 0], [-6.25, 0, 0, -1.25, -0.25], [11.25, 0, 0, 0.25, 0.25]])
 #A = np.array([[1,1,1,1,1,0,0,0], [5,1,0,0,0,1,0,0], [0,0,-1,-1,0,0,1,0], [0,0,1,5,0,0,0,8]])
@@ -293,37 +293,15 @@ name = 'afiro'
 path = r'\a\a'
 path = root + path.replace('a', name)
 
-test_result = test_CC(root, 5)
-with open('test_alg.csv', 'w') as f:
+test_result = test_imp(root, 5, 1, 0.5)
+#test_result = test_CC(root, 5)
+with open('test_imp05.csv', 'w') as f:
     writer = csv.writer(f, lineterminator='\n')
     writer.writerows(test_result)
     f.close()    
 
 print(test_result)
 
-tableau = np.loadtxt(path + r'.txt', delimiter = ',')
-Ab = np.loadtxt(path + r'_Ab.txt', delimiter = ',')
-#ans0 = random_method(tableau, Ab[:, 0:-1], Ab[:, -1], 4, 0)
-#ans1 = random_method(tableau, Ab[:, 0:-1], Ab[:, -1], 4, 1)
-#ans_GI = CCandGI(tableau, Ab[:, 0:-1], Ab[:, -1], 4, 1)
-#print(ans0[1][0][0], ans0[3], ans0[4])
-#print(ans1[1][0][0], ans1[3], ans1[4])
-#print(ans_GI[1][0][0], ans_GI[3])
-#print(solve_mps(path, 4))
-
-
-sample1 = np.array([[0,-4,-3], [6,2,3], [3,-3,2], [5,0,2], [4,2,1]])
-A1 = np.array([[2,3,1,0,0,0], [-3,2,0,1,0,0], [0,2,0,0,1,0], [2,1,0,0,0,1]])
-b1 = np.array([6,3,5,4])
-
-sample2 = np.array([[0,-3,-2],[72,4,1],[48,2,2],[48,1,3]])
-A2 = np.array([[4,1,1,0,0],[2,2,0,1,0],[1,3,0,0,1]])
-b2 = np.array([72,48,48])
-
-sample3 = np.array([[750,-17,29],[-12,2,1],[30,-5,10],[76,4,2]])
-A3 = np.array([[2,-1,4,1,0],[1,2,2,0,1],[-2,0,1,0,0]])
-b3 = np.array([10,8,4])
-
-#print(Practical(sample1, A1, b1, 4))
-#print(Practical(sample2, A2, b2, 4))
-#print(Practical(sample3, A3, b3, 4))
+#おそらく成功したmpsfileの一覧
+#afiro blend sc50a sc50b scagr7 seba stocfor1
+#sc105 adlittle
