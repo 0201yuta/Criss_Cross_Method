@@ -4,6 +4,7 @@ import os.path
 import csv
 import matplotlib.pyplot as plt
 import os
+import time
 
 def Pivot(tableau, b, n): 
     bn = tableau[b + 1, n + 1]
@@ -81,7 +82,7 @@ def Practical(tableau, A, b, error):
     count = 0
     obj_his = [- tableau[0, 0]]
     B_his = [I.size]
-    NB_his = [J.size]   
+    NB_his = [J.size]  
     while I.size + J.size != 0 and count < 5000:
         IJ_Index = np.union1d(np.array([Basis[x] for x in I]), np.array([NonBasis[x] for x in J]))
         IJ_Index = IJ_Index.astype(np.int64)
@@ -407,7 +408,7 @@ def CCandGInew2(tableau, A, b, error, balance, max_back):
         count = count + 1  
         obj_his.append(- tableau[0, 0])
         B_his.append(I.size)
-        NB_his.append(J.size)         
+        NB_his.append(J.size) 
     if count < 5000:        
         return "optimal solution", tableau, count, obj_his, B_his, NB_his
     else:    
@@ -609,23 +610,29 @@ def analyze_alg1(path, error):
     tableau = np.loadtxt(path + r'.txt', delimiter = ',')
     Ab = np.loadtxt(path + r'_Ab.txt', delimiter = ',')
     opt = np.loadtxt(path + r'_opt.txt', delimiter = ',')[0]
+    time_sta = time.perf_counter()
     ans_alg1 = CCMethod(tableau, error)
-    return [ans_alg1[3], ans_alg1[4], ans_alg1[5]] 
+    time_end = time.perf_counter()
+    return [ans_alg1[3], ans_alg1[4], ans_alg1[5], time_end - time_sta] 
 
 def analyze_alg2(path, error):
     tableau = np.loadtxt(path + r'.txt', delimiter = ',')
     Ab = np.loadtxt(path + r'_Ab.txt', delimiter = ',')
     opt = np.loadtxt(path + r'_opt.txt', delimiter = ',')[0]
-    ans_alg2 = Practical(tableau, Ab[:, 0:-1], Ab[:, -1], error)    
-    return [ans_alg2[3], ans_alg2[4], ans_alg2[5]] 
+    time_sta = time.perf_counter()
+    ans_alg2 = Practical(tableau, Ab[:, 0:-1], Ab[:, -1], error)   
+    time_end = time.perf_counter() 
+    return [ans_alg2[3], ans_alg2[4], ans_alg2[5], time_end - time_sta] 
 
 def analyze_CCGI1(path, error):
     balance = 1
     tableau = np.loadtxt(path + r'.txt', delimiter = ',')
     Ab = np.loadtxt(path + r'_Ab.txt', delimiter = ',')
     opt = np.loadtxt(path + r'_opt.txt', delimiter = ',')[0]
+    time_sta = time.perf_counter()
     ans_imp = CCandGI(tableau, Ab[:, 0:-1], Ab[:, -1], error, balance)
-    return [ans_imp[3], ans_imp[4], ans_imp[5]]     
+    time_end = time.perf_counter()
+    return [ans_imp[3], ans_imp[4], ans_imp[5], time_end - time_sta]     
 
 def analyze_CCGI2(path, error):
     balance = 1
@@ -633,8 +640,10 @@ def analyze_CCGI2(path, error):
     tableau = np.loadtxt(path + r'.txt', delimiter = ',')
     Ab = np.loadtxt(path + r'_Ab.txt', delimiter = ',')
     opt = np.loadtxt(path + r'_opt.txt', delimiter = ',')[0]
+    time_sta = time.perf_counter()
     ans_GInew = CCandGInew2(tableau, Ab[:, 0:-1], Ab[:, -1], error, balance, max_back)
-    return [ans_GInew[3], ans_GInew[4], ans_GInew[5]]   
+    time_end = time.perf_counter()
+    return [ans_GInew[3], ans_GInew[4], ans_GInew[5], time_end - time_sta]   
 
 def make_figure(root, func, error):
     files = os.listdir(root)
@@ -671,6 +680,56 @@ def make_figure(root, func, error):
         plt.clf()
     return "finish" 
 
+def bnbobj(root, func, error):
+    result_table = []
+    fname = func.__name__
+    fname = fname.replace('analyze_', '')
+    dirlist = ['afiro', 'blend', 'sc50a', 'sc50b', 'scagr7', 'seba', 'stocfor1']
+    for name in dirlist:
+        P = r'\a\a'
+        path = root + P.replace('a', name)
+        [obj, b, nb] = func(path, error)
+        ite = len(obj)
+        obj_opt = np.count_nonzero(obj - obj[-1] < 0)
+        b_0 = ite - np.count_nonzero(b)
+        nb_0 = ite - np.count_nonzero(nb)
+        result = [name, obj_opt, round(100 * obj_opt / ite, 1), b_0, round(100 * b_0 / ite, 1), nb_0, round(100 * nb_0 / ite, 1)]
+        result_table.append(result)
+    with open(fname + '_bnbobj.csv', 'w') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerows(result_table)
+    f.close() 
+    return "finish" 
+
+def alg_time(root, error):
+    time_table = []
+    funcs = [analyze_alg1, analyze_alg2, analyze_CCGI1, analyze_CCGI2]
+    dirlist = ['afiro', 'blend', 'sc50a', 'sc50b', 'scagr7', 'seba', 'stocfor1']
+    for name in dirlist:
+        P = r'\a\a'
+        path = root + P.replace('a', name)
+        result1 = [name, '&', 'size', '&', 'time', '&']
+        result2 = [name, '&', 'size', '&', 'time/ite', '&']
+        for func in funcs:
+            [obj, b, nb, time] = func(path, error)
+            ite = len(obj) - 1
+            result1.extend([round(time * 1000, 4), '&'])
+            result2.extend([round(time * 1000 / ite, 4), '&'])
+        time_table.append(result1)
+        time_table.append(result2)
+    with open('time2.csv', 'w') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerows(time_table)
+    f.close() 
+    return "finish"  
+
+#if __name__ == '__main__':
+#    root = r'C:\Users\pc\Documents\MATLAB'
+#    name = 'sc50a'
+#    path = r'\a\a'
+#    path = root + path.replace('a', name)
+#    print(analyze_alg1(path, 5))
+
 #sample = np.array([[191.5, 5.5, -0.5, 4.5, 0], [-5.75, -0.25, 0.25, -0.25, 0], [40.75, 1.25, -0.25, 1.25, 0], [-6.25, 0, 0, -1.25, -0.25], [11.25, 0, 0, 0.25, 0.25]])
 #A = np.array([[1,1,1,1,1,0,0,0], [5,1,0,0,0,1,0,0], [0,0,-1,-1,0,0,1,0], [0,0,1,5,0,0,0,8]])
 #b = np.array([40,12,-5,50])
@@ -680,20 +739,14 @@ name = 'sc50a'
 path = r'\a\a'
 path = root + path.replace('a', name)
 
-print(make_figure(root, analyze_CCGI2, 5))
+#print(make_figure(root, analyze_CCGI2, 5))
+#print(analyze_alg2(path, 5)[3])
+#print(alg_time(root, 5))
 
-[obj, b, nb] = analyze_CCGI1(path, 5)
-ite = list(range(len(obj)))
-plt.plot(ite, b, color = "r", label = "Basis")
-plt.plot(ite, nb, color = "b", label = "NonBasis")
-plt.grid(which = "both", axis="y")
-plt.legend(loc="center", bbox_to_anchor=(0.5, 1.05), ncol=2) 
-plt.savefig("fa")
-plt.clf()
-plt.plot(ite, obj, color = "k", label = "objective value")
-plt.plot(ite, [obj[-1]] * len(obj), color = "y", label = "optimal value")
-plt.legend(loc="center", bbox_to_anchor=(0.5, 1.05), ncol=2) 
-plt.savefig("fafa")
+test = np.array([4,5,1,3,1])
+pri = np.array([0,4,3,6])
+print(test[pri])
+
 
 #print(solve_alg(path, 5))
 #test_result = mpssize(root)
